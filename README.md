@@ -1,1 +1,1 @@
-# cpp_multithreading
+A WebSocket-based chat server where multiple clients connect, authenticate, create/join/leave rooms, send messages to rooms, and receive broadcasts. The server is written in C++ and uses multithreading for concurrency.
