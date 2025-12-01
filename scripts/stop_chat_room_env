@@ -1,0 +1,7 @@
+#!/bin/bash
+
+docker-compose down
+
+#docker run -it --rm -v /etc/passwd:/etc/passwd:ro -v /etc/group:/etc/group:ro -u $(id -u):$(id -g) -e USER=$(whoami) --name u24_docker -v "$PWD":"$PWD" -w "$PWD" u24 
+
+

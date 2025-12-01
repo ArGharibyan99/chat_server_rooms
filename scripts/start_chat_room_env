@@ -1,0 +1,8 @@
+#!/bin/bash
+
+docker-compose up -d postgres pgadmin
+docker-compose run --rm --service-ports chat_room bash
+
+#docker run -it --rm -v /etc/passwd:/etc/passwd:ro -v /etc/group:/etc/group:ro -u $(id -u):$(id -g) -e USER=$(whoami) --name u24_docker -v "$PWD":"$PWD" -w "$PWD" u24 
+
+

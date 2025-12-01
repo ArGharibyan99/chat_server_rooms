@@ -1,26 +1,77 @@
-# Docker helper scripts
+# 🔧 Chat Room – Docker Helper Scripts
 
-This repository includes two small helper scripts in the `scripts/` folder to make building and running a development Docker container quick and reproducible:
+This project uses **Docker Compose** to build and run a complete development environment that includes:
 
-- `scripts/build_docker` — builds the `u24` Docker image using the bundled `Dockerfile`.
-- `scripts/du24` — starts an interactive container from the `u24` image, mounts the current working directory, and opens a shell.
+- **chat_room_env** → interactive build & run container  
+- **postgres_db** → PostgreSQL database  
+- **pgadmin** → pgAdmin web UI for managing the database  
 
-## Prerequisites
+To make everything simple and consistent, three helper scripts are provided in the `scripts/` directory:
 
-- Docker installed and working on your machine (docker daemon running).
-- Scripts expect to be executed from the repository root or any location you want mounted into the container.
-- The scripts use `sudo` in their default form. If your user is in the `docker` group and you can run Docker without `sudo`, you can run the commands without it.
+- `scripts/build_docker_images` — builds all Docker images (chat room environment, PostgreSQL, pgAdmin)
+- `scripts/start_chat_room_env` — starts PostgreSQL + pgAdmin in the background, then launches the `chat_room_env` container interactively  
+- `scripts/stop_chat_room_env` — stops and removes all containers defined in `docker-compose.yml`
 
-## Usage examples
+No `sudo` is required (your user must be in the `docker` group).
 
-From the repository root:
+---
 
-1) Build the image (may require `sudo`):
+## 🚀 Prerequisites
 
-   sudo ./scripts/build_docker
+- Docker and Docker Compose installed  
+- Docker daemon running  
+- Run scripts from the project root (the same directory where `docker-compose.yml` is located)
 
-2) Start an interactive container with your repo mounted:
+---
 
-   sudo ./scripts/du24
+## 📦 Build All Docker Images
 
-Inside the container you'll be dropped into a shell as a non-root user (`devuser` in the provided `Dockerfile`) at the same working directory as on the host. From there you can run cmake/make, tests, editors, etc.
+This builds all images used by Docker Compose:
+
+```bash
+./scripts/build_docker_images
+```
+
+### Images Included
+
+- **chat_room_env** – build + run environment  
+- **postgres:15** – official PostgreSQL image  
+- **pgadmin** – official pgAdmin4 image  
+
+---
+
+## ▶️ Start the Full Environment
+
+This will start:
+
+- **postgres_db** – running in the background  
+- **pgadmin** – running in the background  
+- **chat_room_env** – interactive shell for development  
+
+Run:
+
+```bash
+./scripts/start_chat_room_env
+```
+
+## ⏹ Stop the Environment
+
+Stop and remove all running containers:
+
+```bash
+./scripts/stop_chat_room_env
+```
+
+PostgreSQL data is not lost, because it is stored inside a persistent Docker volume named pgdata.
+
+## 🌐 Accessing pgAdmin
+
+Once the containers are running, open pgAdmin in your browser:
+
+```bash
+http://localhost:8080
+```
+
+Login Credentials
+- Email: admin
+- Password: admin
