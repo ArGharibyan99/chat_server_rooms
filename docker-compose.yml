@@ -1,0 +1,54 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: postgres_db
+    restart: always
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: db
+    ports:
+      - "5432:5432"   # Host can connect to DB
+    volumes:
+      - pgdata:/var/lib/postgresql/data  # persist DB
+
+  chat_room:
+    build:
+      context: .
+      dockerfile: scripts/Dockerfile.app
+    image: chat_room_image
+    container_name: chat_room_env
+    depends_on:
+      - postgres
+    environment:
+      DATABASE_HOST: postgres
+      DATABASE_USER: user
+      DATABASE_PASSWORD: password
+      DATABASE_NAME: db
+    # Mount current working directory into container at same path
+    volumes:
+      - ${PWD}:${PWD}
+    working_dir: ${PWD}  # start shell in this directory
+    tty: true
+    stdin_open: true
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "8080:80"  # Host access
+    depends_on:
+      - postgres
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+
+volumes:
+  pgdata:
+  pgadmin_data:
+

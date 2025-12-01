@@ -13,14 +13,10 @@ RUN apt update && apt install -y \
     curl wget \
     gdb \
     sudo \
+    iputils-ping \
+    libpq-dev \
     && apt clean
 
-# Create a normal user (optional but recommended)
-RUN useradd -ms /bin/bash devuser && \
-    echo "devuser ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
-
-USER devuser
-WORKDIR /home/devuser
 
 # This will be your workspace where your code is mounted
 CMD ["/bin/bash"]

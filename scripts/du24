@@ -1,1 +1,0 @@
-docker run -it --rm --name u24_docker -v "$PWD":"$PWD" -w "$PWD" u24
