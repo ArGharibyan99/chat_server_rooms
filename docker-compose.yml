@@ -8,16 +8,17 @@ services:
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
-      POSTGRES_DB: db
+      POSTGRES_DB: chat_db
     ports:
       - "5432:5432"   # Host can connect to DB
     volumes:
       - pgdata:/var/lib/postgresql/data  # persist DB
+      - ./scripts/init_db.sh:/docker-entrypoint-initdb.d/init_db.sh
 
   chat_room:
     build:
       context: .
-      dockerfile: scripts/Dockerfile.app
+      dockerfile: scripts/configs/Dockerfile.app
     image: chat_room_image
     container_name: chat_room_env
     depends_on:
@@ -26,7 +27,7 @@ services:
       DATABASE_HOST: postgres
       DATABASE_USER: user
       DATABASE_PASSWORD: password
-      DATABASE_NAME: db
+      DATABASE_NAME: chat_db
     # Mount current working directory into container at same path
     volumes:
       - ${PWD}:${PWD}
@@ -39,7 +40,7 @@ services:
     container_name: pgadmin
     restart: always
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
       PGADMIN_DEFAULT_PASSWORD: admin
     ports:
       - "8080:80"  # Host access
@@ -47,6 +48,7 @@ services:
       - postgres
     volumes:
       - pgadmin_data:/var/lib/pgadmin
+      - ./scripts/configs/pgadmin_servers.json:/pgadmin4/servers.json  # bind mount (host file)
 
 volumes:
   pgdata:
