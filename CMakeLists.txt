@@ -12,18 +12,18 @@ find_package(Threads REQUIRED)
 include_directories(include)
 
 # source files
-file(GLOB SOURCES "src/*.cpp")
+file(GLOB SERVER src/server/*.cpp
+		 src/db/*.cpp)
 
 # create library from sources
-add_library(ChatRoomLib ${SOURCES})
+add_library(ChatRoomLib ${SERVER})
 
 # executable
-add_executable(ChatRoom src/main.cpp)
+add_executable(ChatRoom ${SERVER})
 
 target_compile_options(ChatRoom PRIVATE -O0)
 
 # link library (not executable)
-target_link_libraries(ChatRoom PRIVATE ChatRoomLib)
 target_link_libraries(ChatRoom PRIVATE Threads::Threads)
 
 # optional: add tests
