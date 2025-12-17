@@ -3,6 +3,8 @@
 #include <unistd.h>    // fork, sleep
 #include <cstring>
 #include <thread>
+#include <atomic>
+#include <csignal>     // kill
 #include "db_queue.h"
 #include "ipc_server.h"
 

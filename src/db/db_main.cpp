@@ -1,4 +1,7 @@
 #include "db.h"
+#include "logger.h"
+
+std::atomic<bool> db_shutdown(false);
 
 void print_db_table(PGconn *conn, const char *table_name) {
     char query[256];
@@ -14,22 +17,43 @@ void print_db_table(PGconn *conn, const char *table_name) {
     int rows = PQntuples(res);
     int cols = PQnfields(res);
 
-    printf("Table: %s\n", table_name);
+    LOG_DEBUG("Table: %s\n", table_name);
     // Print header
     for (int j = 0; j < cols; j++) {
-        printf("%s\t", PQfname(res, j));
+        LOG_DEBUG("%s\t", PQfname(res, j));
     }
-    printf("\n");
+    LOG_DEBUG("\n");
 
     // Print rows
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < cols; j++) {
-            printf("%s\t", PQgetvalue(res, i, j));
+            LOG_DEBUG("%s\t", PQgetvalue(res, i, j));
         }
-        printf("\n");
+        LOG_DEBUG("\n");
     }
 
     PQclear(res);
+}
+
+void sigterm_handler(int signo)
+{
+    if (signo == SIGTERM) {
+		LOG_DEBUG("Received SIGTERM signal in DB process\n");
+        db_shutdown.store(true);
+    }
+}
+
+void register_signals()
+{
+    struct sigaction sa;
+    sa.sa_handler = sigterm_handler;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = 0;  // or SA_RESTART
+
+    sigaction(SIGTERM, &sa, nullptr);
+	LOG_DEBUG("Registered SIGTERM handler in DB process\n");
+    sigaction(SIGINT,  &sa, nullptr); // optional Ctrl+C
+	LOG_DEBUG("Registered SIGINT handler in DB process\n");
 }
 
 DbWorker::DbWorker(BlockingQueue<DbRequest>& req,
@@ -39,15 +63,14 @@ DbWorker::DbWorker(BlockingQueue<DbRequest>& req,
 {
     conn_ = PQconnectdb(conninfo);
     if (PQstatus(conn_) != CONNECTION_OK) {
-        std::cerr << "DB connection failed: "
-                  << PQerrorMessage(conn_) << std::endl;
+        LOG_ERROR("DB connection failed: %s\n", PQerrorMessage(conn_));
         exit(1);
     }
 }
 
 void DbWorker::operator()() {
     DbRequest req;
-    while (request_q_.pop(req)) {
+    while (request_q_.pop(req) && !db_shutdown.load()) {
         DbResponse resp{};
         resp.request_id = req.request_id;
         handle_request(req, resp);
@@ -74,7 +97,7 @@ void DbWorker::handle_request(const DbRequest& req, DbResponse& resp) {
         PQclear(r);
     } else if (req.cmd == DbCmd::TEST) {
 		resp.status = 0;
-		snprintf(resp.data, sizeof(resp.data), "DB received: %s", req.payload);
+		snprintf(resp.data, sizeof(resp.data), "%s", "DB Reply");
 		resp.data_len = strlen(resp.data);
 	}
 }
@@ -82,8 +105,7 @@ void DbWorker::handle_request(const DbRequest& req, DbResponse& resp) {
 // ---------------- DB process function ----------------
 void run_db_handler()
 {
-    std::cout << "[DB] Database handler process started. PID = "
-              << getpid() << std::endl;
+    LOG_DEBUG("[DB] Database handler process started. PID = %d\n", getpid());
 
 	BlockingQueue<DbRequest> request_q;
     BlockingQueue<DbResponse> response_q;
@@ -98,6 +120,8 @@ void run_db_handler()
 	PGresult *tables; 
 
     char conninfo[256]; // Make sure it’s large enough
+
+	register_signals();
 
 	// Build the connection string
 	snprintf(conninfo, sizeof(conninfo),

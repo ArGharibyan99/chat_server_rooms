@@ -1,4 +1,10 @@
 #pragma once
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <unistd.h>
+#include <cstring>
+#include <iostream>
+#include <atomic>
 #include "db_queue.h"
 #include "protocol.h"
 
