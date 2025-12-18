@@ -6,6 +6,7 @@
 #include <sys/un.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <sys/stat.h>
 #include "logger.h"
 #include "db.h"
 
@@ -81,7 +82,7 @@ void run_main_server(pid_t db_pid)
         return;
     }
 
-    LOG_INFO("Request sent");
+    LOG_DEBUG("Request sent");
 
     /* 5. Receive response */
     DbResponse resp{};
@@ -92,10 +93,10 @@ void run_main_server(pid_t db_pid)
         return;
     }
 
-    LOG_INFO("Response received:");
-    LOG_INFO("status = %d", resp.status);
-	LOG_INFO("payload_len = %d", resp.data_len);
-	LOG_INFO("payload = %s", resp.data);
+    LOG_DEBUG("Response received:");
+    LOG_DEBUG("status = %d", resp.status);
+    LOG_DEBUG("payload_len = %d", resp.data_len);
+    LOG_DEBUG("payload = %s", resp.data);
 
     while (!g_stop.load())
     {
@@ -123,6 +124,8 @@ int main()
     sigemptyset(&sa.sa_mask);
     sigaction(SIGINT, &sa, NULL);
 
+    init_logger();
+
     pid_t pid = fork();  // create child process
 
     if (pid < 0)
@@ -138,13 +141,29 @@ int main()
         run_db_handler();
         return 0;
     }
-    else
+
+    pid = fork();
+    if (pid < 0) exit(EXIT_FAILURE);
+    if (pid > 0) exit(EXIT_SUCCESS);
+
+    if(setsid() < 0)
     {
-        // Parent process → main server
-        run_main_server(pid);
+	LOG_ERROR("Failed to create new session!\n");
+	exit(EXIT_FAILURE);
     }
 
-	waitpid(child_pid, &status, 0);
+    umask(0);
+    chdir("/");
+
+    close(STDIN_FILENO);
+    close(STDOUT_FILENO);
+    close(STDERR_FILENO);
+
+    // Parent process → main server
+    run_main_server(pid);
+    close_logger();
+
+    waitpid(child_pid, &status, 0);
 
     return 0;
 }

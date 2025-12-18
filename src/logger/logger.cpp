@@ -3,6 +3,10 @@
 #include <cstdarg>
 #include <ctime>
 #include <iomanip>
+#include <mutex>
+
+static FILE *g_logFile = nullptr;
+static std::mutex g_logMutex;
 
 static const char* log_level_str[] = {
     "INFO",
@@ -10,6 +14,23 @@ static const char* log_level_str[] = {
     "ERROR",
     "DEBUG"
 };
+
+void init_logger() {
+	g_logFile = fopen("/tmp/chat_server_rooms.log", "a");
+    if (!g_logFile) {
+        // Fallback to stderr if file cannot be opened
+        g_logFile = stderr;
+    }
+
+	setvbuf(g_logFile, nullptr, _IOLBF, 0); // line-buffered
+}
+
+void close_logger() {
+	if (g_logFile && g_logFile != stderr) {
+        fclose(g_logFile);
+    }
+    g_logFile = nullptr;
+}
 
 void chr_log(log_level_t level, const char* fmt, ...) {
 
@@ -20,25 +41,24 @@ void chr_log(log_level_t level, const char* fmt, ...) {
     if (level < LOG_INFO || level > LOG_DEBUG)
         return;
 
-    // Get current time
-    std::time_t t = std::time(nullptr);
-    std::tm tm_info;
-#ifdef _WIN32
-    localtime_s(&tm_info, &t);
-#else
-    localtime_r(&t, &tm_info);
-#endif
+	std::lock_guard<std::mutex> lock(g_logMutex);
+    if (!g_logFile) {
+        return;
+    }
 
-    std::cout << "[" << std::put_time(&tm_info, "%Y-%m-%d %H:%M:%S") << "] "
-              << log_level_str[level] << ": ";
+	time_t now = time(nullptr);
+    struct tm tm_buf;
+    localtime_r(&now, &tm_buf);
 
-    // Print formatted message
+    char timebuf[32];
+    strftime(timebuf, sizeof(timebuf), "%Y-%m-%d %H:%M:%S", &tm_buf);
+    fprintf(g_logFile, "[%s] [%s] ", timebuf, log_level_str[level]);
+
     va_list args;
     va_start(args, fmt);
-    char buffer[1024];
-    vsnprintf(buffer, sizeof(buffer), fmt, args);
+    vfprintf(g_logFile, fmt, args);
     va_end(args);
 
-    std::cout << buffer << std::endl;
+    fprintf(g_logFile, "\n");
 }
 

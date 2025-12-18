@@ -38,7 +38,7 @@ void print_db_table(PGconn *conn, const char *table_name) {
 void sigterm_handler(int signo)
 {
     if (signo == SIGTERM) {
-		LOG_DEBUG("Received SIGTERM signal in DB process\n");
+        LOG_DEBUG("Received SIGTERM signal in DB process");
         db_shutdown.store(true);
     }
 }
@@ -51,9 +51,9 @@ void register_signals()
     sa.sa_flags = 0;  // or SA_RESTART
 
     sigaction(SIGTERM, &sa, nullptr);
-	LOG_DEBUG("Registered SIGTERM handler in DB process\n");
+    LOG_DEBUG("Registered SIGTERM handler in DB process");
     sigaction(SIGINT,  &sa, nullptr); // optional Ctrl+C
-	LOG_DEBUG("Registered SIGINT handler in DB process\n");
+    LOG_DEBUG("Registered SIGINT handler in DB process");
 }
 
 DbWorker::DbWorker(BlockingQueue<DbRequest>& req,
@@ -63,7 +63,7 @@ DbWorker::DbWorker(BlockingQueue<DbRequest>& req,
 {
     conn_ = PQconnectdb(conninfo);
     if (PQstatus(conn_) != CONNECTION_OK) {
-        LOG_ERROR("DB connection failed: %s\n", PQerrorMessage(conn_));
+        LOG_ERROR("DB connection failed: %s", PQerrorMessage(conn_));
         exit(1);
     }
 }
@@ -105,32 +105,30 @@ void DbWorker::handle_request(const DbRequest& req, DbResponse& resp) {
 // ---------------- DB process function ----------------
 void run_db_handler()
 {
-    LOG_DEBUG("[DB] Database handler process started. PID = %d\n", getpid());
+    LOG_DEBUG("[DB] Database handler process started. PID = %d", getpid());
 
-	BlockingQueue<DbRequest> request_q;
+    BlockingQueue<DbRequest> request_q;
     BlockingQueue<DbResponse> response_q;
 
-	const char *host = "postgres";
+    const char *host = "postgres";
     const char *port = "5432";
     const char *dbname = "chat_db";
     const char *user = "user";
     const char *password = "password";
 
-	PGconn *conn;
-	PGresult *tables; 
+    PGconn *conn;
+    PGresult *tables; 
 
     char conninfo[256]; // Make sure it’s large enough
 
-	register_signals();
+    register_signals();
 
-	// Build the connection string
-	snprintf(conninfo, sizeof(conninfo),
-			 "host=%s port=%s dbname=%s user=%s password=%s",
-			 host, port, dbname, user, password);
+    // Build the connection string
+    snprintf(conninfo, sizeof(conninfo),
+	"host=%s port=%s dbname=%s user=%s password=%s",
+ 	 host, port, dbname, user, password);
 
-	const int WORKERS = WORKERS_COUNT;
     std::vector<std::thread> workers;
-
     for (int i = 0; i < WORKERS_COUNT; i++) {
         workers.emplace_back(
             DbWorker(request_q, response_q, conninfo)

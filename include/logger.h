@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <stdarg.h>
 
+#define LOGGER_FILE "/tmp/chat_server_rooms.log"
+
 // Log levels
 typedef enum {
     LOG_INFO,
@@ -12,6 +14,8 @@ typedef enum {
     LOG_DEBUG
 } log_level_t;
 
+void init_logger();
+void close_logger();
 // Main logging function
 void chr_log(log_level_t level, const char *fmt, ...);
 

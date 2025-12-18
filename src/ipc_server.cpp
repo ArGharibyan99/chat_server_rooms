@@ -29,16 +29,16 @@ void IpcServer::run() {
         if (n <= 0)
             break;
 
-		LOG_INFO("Request received");
-		LOG_INFO("Id: %d", req.request_id);
-		LOG_INFO("Payload Len: %d", req.payload_len);
-		LOG_INFO("Payload: %s", req.payload);
+	LOG_DEBUG("Request received");
+	LOG_DEBUG("Id: %d", req.request_id);
+	LOG_DEBUG("Payload Len: %d", req.payload_len);
+	LOG_DEBUG("Payload: %s", req.payload);
         request_q_.push(req);
 
         DbResponse resp{};
         response_q_.pop(resp);
         send(client_fd_, &resp, sizeof(resp), 0);
-		LOG_INFO("Response sent");
+	LOG_DEBUG("Response sent");
     }
 }
 
@@ -47,10 +47,10 @@ IpcServer::~IpcServer() {
     if (client_fd_ >= 0) {
         close(client_fd_);
     }
-	LOG_INFO("Client closed");
+    LOG_DEBUG("Client closed");
 
     if (server_fd_ >= 0) {
         close(server_fd_);
     }
-	LOG_INFO("Server closed");
+    LOG_DEBUG("Server closed");
 }
