@@ -7,24 +7,33 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 # find pthread / threads
 find_package(Threads REQUIRED)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(LIBPQ REQUIRED libpq)
 
 # include headers
 include_directories(include)
+include_directories(/usr/include/postgresql)
 
 # source files
-file(GLOB SOURCES "src/*.cpp")
+file(GLOB SERVER src/server/*.cpp
+		 src/db/*.cpp
+         src/logger/logger.cpp
+         src/ipc_server.cpp)
 
 # create library from sources
-add_library(ChatRoomLib ${SOURCES})
+add_library(ChatRoomLib ${SERVER})
 
 # executable
-add_executable(ChatRoom src/main.cpp)
+add_executable(ChatRoom ${SERVER})
 
 target_compile_options(ChatRoom PRIVATE -O0)
+# Add this only in DEBUG mode 
+# target_compile_definitions(ChatRoom PRIVATE DEBUG)
+#  
 
 # link library (not executable)
-target_link_libraries(ChatRoom PRIVATE ChatRoomLib)
 target_link_libraries(ChatRoom PRIVATE Threads::Threads)
+target_link_libraries(ChatRoom PRIVATE  ${LIBPQ_LIBRARIES})
 
 # optional: add tests
 enable_testing()
